@@ -11,7 +11,7 @@ import SwiftUI
 struct DogBreedsApp: App {
     var body: some Scene {
         WindowGroup {
-            DogBreedsView() // Sua tela principal
+            DogBreedsView()
         }
     }
 }
