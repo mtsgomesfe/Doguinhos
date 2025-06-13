@@ -33,21 +33,46 @@ struct BreedInfo: Decodable {
 
 class DogBreedsViewModel: ObservableObject {
     @Published var breeds: [String] = []
-    @Published var selectedBreed: String = ""
-    @Published var dogImageURL: String?
+    @Published var selectedBreed: String = "" {
+        didSet {
+            // 🔁 Salva a raça selecionada
+            UserDefaults.standard.set(selectedBreed, forKey: "SelectedBreed")
+        }
+    }
+    @Published var dogImageURL: String? {
+        didSet {
+            // 🔁 Salva a imagem atual
+            if let url = dogImageURL {
+                UserDefaults.standard.set(url, forKey: "DogImageURL")
+            }
+        }
+    }
     @Published var breedInfo: BreedInfo?
     @Published var isLoadingBreedInfo = false
     @Published var translatedDescription: String?
+    
     private let translator = TranslationService()
-
-    // Substitua com sua chave da TheDogAPI
     private let dogAPIKey = "SUA_API_KEY"
 
     init() {
         fetchBreeds()
+        restoreLastState()
     }
 
-    /// Busca a lista de raças da API dog.ceo
+    private func restoreLastState() {
+        // 🔁 Restaura dados salvos, se houver
+        if let savedBreed = UserDefaults.standard.string(forKey: "SelectedBreed") {
+            self.selectedBreed = savedBreed
+            fetchBreedInfo(for: savedBreed)
+            
+            if let savedImage = UserDefaults.standard.string(forKey: "DogImageURL") {
+                self.dogImageURL = savedImage
+            } else {
+                fetchDogImage(for: savedBreed)
+            }
+        }
+    }
+
     func fetchBreeds() {
         guard let url = URL(string: "https://dog.ceo/api/breeds/list/all") else { return }
 
@@ -55,9 +80,7 @@ class DogBreedsViewModel: ObservableObject {
             guard let data = data else { return }
 
             do {
-                // ✅ Corrigido: usamos a struct DogBreedsListResponse
                 let decoded = try JSONDecoder().decode(DogBreedsListResponse.self, from: data)
-
                 let allBreeds = decoded.message.flatMap { (key, subBreeds) -> [String] in
                     if subBreeds.isEmpty {
                         return [key]
@@ -76,7 +99,6 @@ class DogBreedsViewModel: ObservableObject {
         }.resume()
     }
 
-    /// Busca uma imagem da raça escolhida
     func fetchDogImage(for breed: String) {
         let urlString = "https://dog.ceo/api/breed/\(breed)/images/random"
         guard let url = URL(string: urlString) else { return }
@@ -97,7 +119,6 @@ class DogBreedsViewModel: ObservableObject {
         }.resume()
     }
 
-    /// Busca informações da raça pela TheDogAPI
     func fetchBreedInfo(for breed: String) {
         self.breedInfo = nil
         self.translatedDescription = nil
@@ -121,7 +142,6 @@ class DogBreedsViewModel: ObservableObject {
                     DispatchQueue.main.async {
                         self.breedInfo = info
 
-                        // 👇 Traduz o campo temperament (ou outro)
                         if let textToTranslate = info.temperament {
                             self.translator.translate(text: textToTranslate) { translated in
                                 DispatchQueue.main.async {
@@ -137,7 +157,6 @@ class DogBreedsViewModel: ObservableObject {
         }.resume()
     }
 
-    /// Formata nomes como "bulldog/french" para "Bulldog (French)"
     func formatBreedName(_ breed: String) -> String {
         let parts = breed.split(separator: "/")
         if parts.count == 2 {
@@ -146,7 +165,7 @@ class DogBreedsViewModel: ObservableObject {
             return breed.capitalized
         }
     }
-    
+
     func fetchOnlyImage(for breed: String) {
         let endpoint = "https://dog.ceo/api/breed/\(breed)/images/random"
         guard let url = URL(string: endpoint) else { return }
@@ -161,5 +180,4 @@ class DogBreedsViewModel: ObservableObject {
             }
         }.resume()
     }
-
 }

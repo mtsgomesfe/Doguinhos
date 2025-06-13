@@ -20,6 +20,7 @@ struct DogBreedsView: View {
                         AsyncImage(url: url) { phase in
                             switch phase {
                             case .success(let image):
+                                Spacer(minLength: 40)
                                 image
                                     .resizable()
                                     .scaledToFit()
@@ -97,7 +98,6 @@ struct DogBreedsView: View {
                     Spacer(minLength: 120)
                 }
             }
-            Spacer()
             // Botão fixo na parte inferior
             Button(action: {
                 
@@ -107,7 +107,6 @@ struct DogBreedsView: View {
                 Image("doguinho-button")
                     .resizable()
                     .frame(width: 110, height: 120)
-                    .padding(.top, 100)
                     .shadow(radius: 4)
             }
 
