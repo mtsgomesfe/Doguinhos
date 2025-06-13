@@ -146,4 +146,20 @@ class DogBreedsViewModel: ObservableObject {
             return breed.capitalized
         }
     }
+    
+    func fetchOnlyImage(for breed: String) {
+        let endpoint = "https://dog.ceo/api/breed/\(breed)/images/random"
+        guard let url = URL(string: endpoint) else { return }
+
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            guard let data = data,
+                  let decoded = try? JSONDecoder().decode(DogImageResponse.self, from: data),
+                  error == nil else { return }
+
+            DispatchQueue.main.async {
+                self.dogImageURL = decoded.message
+            }
+        }.resume()
+    }
+
 }
